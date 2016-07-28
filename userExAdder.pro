@@ -33,3 +33,8 @@ HEADERS += \
 
 FORMS += \
     view/mainwindow.ui
+
+RESOURCES += \
+    rsc.qrc
+
+RC_FILE =userexa.rc

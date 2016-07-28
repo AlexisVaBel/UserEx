@@ -10,7 +10,8 @@ int main(int argc,char ** argv){
     QFontDatabase::addApplicationFont("fonts/highspeed.ttf");
     QFontDatabase::addApplicationFont("fonts/crystal.ttf");
 
-    MainWindow *wnd=new MainWindow();
+    MainWindow *wnd=new MainWindow();    
+    wnd->setWindowIcon(QIcon(":/img/uexicon2.png"));
     wnd->show();
     return app.exec();
 }

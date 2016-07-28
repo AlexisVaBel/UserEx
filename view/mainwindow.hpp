@@ -20,7 +20,7 @@ static QString strPathDB    =QString("E:\\DataBase\\SHPFZ\\USERS.FDB");
 static QString strHostDB    =QString("localhost");
 static QString strHostTCP   =QString("localhost");
 static QString strFiltTCP   ="*";
-static int     iPortTCP     =3033;
+
 
 namespace Ui {
 class MainWindow;
@@ -47,9 +47,19 @@ public slots:
 private slots:
     void on_btnOK_clicked();
 
+
+    void on_btnCancel_clicked();
+
 private:
 
+    bool                m_bTCPErr;
+
     QString             m_strCode;
+    QString             m_strTCPHost;
+    QString             m_strTCPPort;
+    QString             m_strDBPath;
+    QString             m_strDBHost;
+    QString             m_strTag;
     QStringList         m_lstCards;
     QStringListModel    *m_modelCards;
 
@@ -67,8 +77,15 @@ private:
     void prepareView();
     void prepareSiSlo();
 
+    void readIni();
+    void writeIni();
+
     void startListenTcp();
 
+
+    // QWidget interface
+protected:
+    void closeEvent(QCloseEvent *);
 };
 
 #endif // MAINWINDOW_H

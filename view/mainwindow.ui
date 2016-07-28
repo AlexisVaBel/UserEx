@@ -37,6 +37,9 @@
   <property name="windowTitle">
    <string>Редактор пользователей</string>
   </property>
+  <property name="toolButtonStyle">
+   <enum>Qt::ToolButtonFollowStyle</enum>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <property name="autoFillBackground">
     <bool>true</bool>

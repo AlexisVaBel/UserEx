@@ -12,16 +12,16 @@
 
 MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent),
     m_ui(new Ui::MainWindow){
-
-    m_userCntr=new UserDBController(this,"E:\\DataBase\\SHPFZ\\USERS.FDB","localhost");
-
+    readIni();
+    m_bTCPErr=true;
+    m_userCntr=new UserDBController(this,m_strDBPath,m_strDBHost);
 
     prepareView();
     prepareSiSlo();
 
     prepareUsersData();
     startListenTcp();
-    prepareTbl();
+    prepareTbl();    
 }
 
 MainWindow::~MainWindow(){
@@ -55,17 +55,21 @@ void MainWindow::prepareGroupList(){
 }
 
 void MainWindow::slOkPushed(){
+    if(m_bTCPErr){
+        QMessageBox::information(this,QString::fromLocal8Bit("Запрещено"),QString::fromLocal8Bit("Ошибка TCP соединения"));
+        return;
+    }
     QString strUser=m_ui->edtUser->text();
     if(!m_userCntr->bUserExists(strUser)){
         QMessageBox::StandardButton reply=QMessageBox::question(this,QString::fromLocal8Bit("Подтверждение"),QString::fromLocal8Bit("Добавить нового пользователя"),
                                                                 QMessageBox::Yes|QMessageBox::No);
         if(reply==QMessageBox::Yes){
             if(m_userCntr->insertUser(strUser,m_ui->lblCardNew->text(),m_ui->boxGroup->currentText())){
-                QMessageBox::information(this,"Added user",strUser);
+                QMessageBox::information(this,QString::fromLocal8Bit("Пользователь добавлен"),strUser);
                 prepareUserList();
                 slUserSetted();
             }else{
-                QMessageBox::information(this,"Error adding user",strUser);
+                QMessageBox::information(this,QString::fromLocal8Bit("Ошибка при добавлении"),strUser);
             }
         };
     }else{
@@ -73,10 +77,10 @@ void MainWindow::slOkPushed(){
                                                                 QMessageBox::Yes|QMessageBox::No);
         if(reply==QMessageBox::Yes){
             if(m_userCntr->updateUser(m_ui->edtUser->text(),m_ui->lblCardNew->text(),m_ui->boxGroup->currentText())){
-                QMessageBox::information(this,"Updated user","str");
+                QMessageBox::information(this,QString::fromLocal8Bit("Пользователь обновлен"),strUser);
                 slUserSetted();
             }else{
-                QMessageBox::information(this,"Error updating user",strUser);
+                QMessageBox::information(this,QString::fromLocal8Bit("Ошибка при обновлении"),strUser);
             }
         };
     }
@@ -105,10 +109,42 @@ void MainWindow::prepareSiSlo(){
     connect(m_ui->btnOK,SIGNAL(clicked()),this,SLOT(slOkPushed()));
 }
 
+void MainWindow::readIni(){
+    QString appIniPath=QString("userexadder.ini");
+    QSettings settings(appIniPath,QSettings::IniFormat);
+    settings.beginGroup("DB");
+    m_strDBPath=settings.value("path",QString("E:\\DataBase\\SHPFZ\\USERS.FDB")).toString();
+    m_strDBHost=settings.value("host",QString("localhost")).toString();
+    settings.endGroup();
+    settings.beginGroup("TCP");
+    m_strTCPPort=settings.value("port",QString("3033")).toString();
+    m_strTCPHost=settings.value("host",QString("localhost")).toString();
+    settings.endGroup();
+    settings.beginGroup("TAG");
+    m_strTag=settings.value("path",QString("PS01")).toString();
+    settings.endGroup();
+}
+
+void MainWindow::writeIni(){
+    QString appIniPath=QString("userexadder.ini");
+    QSettings settings(appIniPath,QSettings::IniFormat);
+    settings.beginGroup("DB");
+    settings.setValue("path",m_strDBPath);
+    settings.setValue("host",m_strDBHost);
+    settings.endGroup();
+    settings.beginGroup("TCP");
+    settings.setValue("port",m_strTCPPort);
+    settings.setValue("host",m_strTCPHost);
+    settings.endGroup();
+    settings.beginGroup("TAG");
+    settings.setValue("path",m_strTag);
+    settings.endGroup();
+}
+
 void MainWindow::startListenTcp(){
     QThread *thr=new QThread(this);
     m_rpsvr =new RpSvrThread();
-    m_rpsvr->init("localhost",3033,"*");
+    m_rpsvr->init(m_strTCPHost,m_strTCPPort.toInt(),"*");
     m_rpsvr->moveToThread(thr);
     connect(thr,SIGNAL(started()),m_rpsvr,SLOT(startWork()));
     connect(m_rpsvr,SIGNAL(dataChanged()),this,SLOT(slUpdateTcpData()));
@@ -130,21 +166,24 @@ void MainWindow::slUpdateTcpData(){
     int iCode[5]={0,0,0,0,0};
 
     QString strTagCode;
-    QString strCode=QString::fromLocal8Bit("PS01.Code");
+    QString strCode=m_strTag+QString::fromLocal8Bit(".Code");
 
     while(iCnt<5){
         strTagCode=strCode+QString::number(iCnt);
         iCode[iCnt++]=m_rpsvr->getTagValue(strTagCode);
     };
-    strCode="PS01.SYSTEM.ErrorCount";    
-    if((m_rpsvr->getTagValue(strCode))==1)
+    strCode=m_strTag+".SYSTEM.ErrorFlag";
+    if((m_rpsvr->getTagValue(strCode))==1){
+        m_bTCPErr=true;
         m_ui->lblStatPSDin->setText("<font color=red>"+QString::fromLocal8Bit("Ошб связь")+"<//font>");
+        return;
+    }
     else
         m_ui->lblStatPSDin->setText(QString::fromLocal8Bit("OK"));
     strTagCode="";
     for(int i=0;i<5;i++)
         strTagCode.append(QString("%1").arg(iCode[i],2,16,QChar('0')));
-
+    m_bTCPErr=false;
     if(!m_lstCards.contains(strTagCode)){
         m_lstCards.append(strTagCode);
         m_modelCards->setStringList(m_lstCards);
@@ -158,7 +197,8 @@ void MainWindow::slTcpEstablished(){
 }
 
 void MainWindow::slTcpRefused(QString str){    
-    QMessageBox::information(this,"",str);
+    QMessageBox::information(this,QString::fromLocal8Bit("Ошибка TCP"),str);
+    m_bTCPErr=true;
     m_ui->lblStatPSDin->setText("<font color=red>"+QString::fromLocal8Bit("TCP err")+"<//font>");
 }
 
@@ -169,4 +209,13 @@ void MainWindow::slCardSelected(QModelIndex idx){
 
 void MainWindow::on_btnOK_clicked(){
 
+}
+
+
+void MainWindow::closeEvent(QCloseEvent *){
+    writeIni();
+}
+
+void MainWindow::on_btnCancel_clicked(){
+    close();
 }
