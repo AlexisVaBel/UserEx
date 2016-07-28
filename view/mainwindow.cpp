@@ -45,6 +45,9 @@ void MainWindow::prepareUsersData(){
 }
 
 void MainWindow::prepareUserList(){
+    if(!m_userCntr->canWork()){
+        m_ui->lblStatDBDin->setText("<font color=red>"+QString::fromLocal8Bit("Ошб связь")+"<//font>");
+    }
     QCompleter *completer=new QCompleter(m_userCntr->getUsersData(),this);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     m_ui->edtUser->setCompleter(completer);
@@ -58,7 +61,11 @@ void MainWindow::slOkPushed(){
     if(m_bTCPErr){
         QMessageBox::information(this,QString::fromLocal8Bit("Запрещено"),QString::fromLocal8Bit("Ошибка TCP соединения"));
         return;
-    }
+    };
+    if(!m_userCntr->canWork()){
+        QMessageBox::information(this,QString::fromLocal8Bit("Запрещено"),QString::fromLocal8Bit("Ошибка соединения с базой"));
+        return;
+    };
     QString strUser=m_ui->edtUser->text();
     if(!m_userCntr->bUserExists(strUser)){
         QMessageBox::StandardButton reply=QMessageBox::question(this,QString::fromLocal8Bit("Подтверждение"),QString::fromLocal8Bit("Добавить нового пользователя"),

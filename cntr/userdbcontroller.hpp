@@ -18,6 +18,7 @@ public:
     bool          insertUser(QString strUser,QString strCard,QString strGroup);
     bool          updateUser(QString strUser, QString strCard, QString strGroup);
     bool          bUserExists(QString strUser);
+    bool          canWork(){return m_bCanWork;}
 
 signals:
 
