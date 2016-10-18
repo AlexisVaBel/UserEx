@@ -91,14 +91,11 @@ void MainWindow::slOkPushed(){
             }
         };
     }
-
 }
 
 void MainWindow::slCancelPushed(){
     close();
 }
-
-
 
 void MainWindow::prepareTbl(){
     m_modelCards = new QStringListModel();
@@ -211,13 +208,13 @@ void MainWindow::slTcpRefused(QString str){
 
 void MainWindow::slCardSelected(QModelIndex idx){
     m_strCode=idx.data().toString();
+    m_strCode=m_strCode.toUpper();
     m_ui->lblCardNew->setText(m_strCode);
 }
 
 void MainWindow::on_btnOK_clicked(){
 
 }
-
 
 void MainWindow::closeEvent(QCloseEvent *){
     writeIni();

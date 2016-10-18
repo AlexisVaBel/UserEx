@@ -31,6 +31,8 @@ protected:
 
     QSqlDatabase    m_db;
 
+
+
     bool     tryToConnect();
 };
 

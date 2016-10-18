@@ -3,6 +3,7 @@ TARGET      =   userExAdder
 TEMPLATE    =   app
 CONFIG      +=  windows
 CONFIG      +=  static
+CONFIG	    +=	c++11
 
 #QMAKE_CXXFLAGS+=-DIBPP_WINDOWS
 #QMAKE_CXXFLAGS+=-D_WIN32
