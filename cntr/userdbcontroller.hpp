@@ -36,6 +36,9 @@ private:
     bool        getGroupId();
     bool        getGroupIdByName(QString str);
     bool        getCardIdByName(QString str);
+    bool        getCardIdByNameAndUserId(QString str,int id);
+
+    bool        getUserInCardsById(int iVal);
 };
 
 #endif // USERDBCONTROLLER_H

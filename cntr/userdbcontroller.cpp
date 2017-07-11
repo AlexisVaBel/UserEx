@@ -75,6 +75,23 @@ bool UserDBController::getCardIdByName(QString str){
     return true;
 }
 
+bool UserDBController::getCardIdByNameAndUserId(QString str, int id){
+    QStringList lstCardId=m_dbCon->checkForDataWhere("CARDS","ID",QString(" where USER_ID=%1").arg(id));
+    if(lstCardId.isEmpty())return false;
+    QStringList lstCardId2=m_dbCon->checkForDataWhere("CARDS","ID",QString(" where CODE=\'%1\'").arg(str));
+    if(lstCardId2.isEmpty())return false;
+    if(lstCardId.at(0).compare(lstCardId2.at(0))==0)return true;
+    return false;
+}
+
+// refactoring due to none extisting user_id in card exist
+bool UserDBController::getUserInCardsById(int iVal){
+    QStringList lstCardId=m_dbCon->checkForDataWhere("CARDS","ID",QString(" where USER_ID=%1").arg(iVal));
+    if(lstCardId.isEmpty())return false;
+    else
+        return true;
+}
+
 bool UserDBController::getGroupId(){
     m_iGroupID=-1;
     QStringList lstGroupId=m_dbCon->checkForDataWhere("USERGROUPS","GROUP_ID",QString(" where USER_ID=%1").arg(m_iUserID));
@@ -92,27 +109,35 @@ bool UserDBController::getGroupIdByName(QString str){
 }
 
 bool UserDBController::insertUser(QString strUser, QString strCard, QString strGroup){
-//    qDebug()<<"===============================";
-//    qDebug()<<strUser;
-//    qDebug()<<strCard;
-//    qDebug()<<strGroup;
     //user
+//    qDebug()<<"added user";
     QString str=QString("insert into users (NAME,DESCR,PSW) values (\'%1\',\'%2\',\'%3\')").arg(strUser).arg(strUser).arg(strCard);
     if(!m_dbCon->procsDML(str))return false;
-//    qDebug()<<"added user";
     if(!getUserId(strUser))return false;
 //    qDebug()<<"user found";
     //card
-    if(!getCardIdByName(strCard)){
-//        qDebug()<<"card not found";
+    //need to check if user in cards exist, not card already where
+    if(!getUserInCardsById(m_iUserID)){
+        if(getCardIdByName(strCard))
+        if(!getCardIdByNameAndUserId(strCard,m_iUserID)){
+        //card already exist where !!! someone reuse someOtherOne`s card
+            str=QString("delete from cards where CODE=\'%2\'").arg(strCard);
+            if(!m_dbCon->procsDML(str))return false;
+        }
+//        qDebug()<<"user in card not found, inserting";
         str=QString("insert into cards (USER_ID,CODE) values (%1,\'%2\')").arg(m_iUserID).arg(strCard);
         if(!m_dbCon->procsDML(str))return false;
-//        qDebug()<<"card inserted";
         if(!getCardId())return false;
-//        qDebug()<<"card getted";
+//        qDebug()<<"card inserted";
     }else{
-//        qDebug()<<"card found";
-        str=QString("update cards set user_id=%1 where id=%2").arg(m_iUserID).arg(m_iCardID);
+//        qDebug()<<"user in cards found";
+        if(getCardIdByName(strCard))
+        if(!getCardIdByNameAndUserId(strCard,m_iUserID)){
+        //card already exist where !!! someone reuse someOtherOne`s card
+            str=QString("delete from cards where CODE=\'%2\'").arg(strCard);
+            if(!m_dbCon->procsDML(str))return false;
+        }
+        str=QString("update cards set code=\'%1\' where user_id=%2").arg(strCard).arg(m_iUserID);
         if(!m_dbCon->procsDML(str))return false;
 //        qDebug()<<"card updated";
     }
@@ -127,16 +152,29 @@ bool UserDBController::insertUser(QString strUser, QString strCard, QString strG
 bool UserDBController::updateUser(QString strUser,QString strCard, QString strGroup){
     QString str;
     if(!getUserId(strUser))return false;
-    if(!getCardIdByName(strCard)){
+//    if(!getCardIdByName(strCard)){
+    if(!getUserInCardsById(m_iUserID)){
 //        qDebug()<<"card not found";
+        if(getCardIdByName(strCard))
+        if(!getCardIdByNameAndUserId(strCard,m_iUserID)){
+        //card already exist where !!! someone reuse someOtherOne`s card
+            str=QString("delete from cards where CODE=\'%2\'").arg(strCard);
+            if(!m_dbCon->procsDML(str))return false;
+        }
         str=QString("insert into cards (USER_ID,CODE) values (%1,\'%2\')").arg(m_iUserID).arg(strCard);
         if(!m_dbCon->procsDML(str))return false;
-//        qDebug()<<"card inserted";
         if(!getCardId())return false;
-//        qDebug()<<"card getted";
+//        qDebug()<<"card inserted";
     }else{
 //        qDebug()<<"card found";
-        str=QString("update cards set user_id=%1 where id=%2").arg(m_iUserID).arg(m_iCardID);
+//        str=QString("update cards set user_id=%1 where id=%2").arg(m_iUserID).arg(m_iCardID);
+        if(getCardIdByName(strCard))
+        if(!getCardIdByNameAndUserId(strCard,m_iUserID)){
+        //card already exist where !!! someone reuse someOtherOne`s card
+            str=QString("delete from cards where CODE=\'%2\'").arg(strCard);
+            if(!m_dbCon->procsDML(str))return false;
+        }
+        str=QString("update cards set code=\'%1\' where user_id=%2").arg(strCard).arg(m_iUserID);
         if(!m_dbCon->procsDML(str))return false;
 //        qDebug()<<"card updated";
     }

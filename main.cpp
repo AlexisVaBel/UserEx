@@ -4,7 +4,6 @@
 
 
 int main(int argc,char ** argv){
-
     QApplication app(argc,argv);
     QFontDatabase::addApplicationFont("fonts/digital-7.ttf");
     QFontDatabase::addApplicationFont("fonts/highspeed.ttf");
